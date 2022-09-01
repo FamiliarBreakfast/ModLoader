@@ -29,10 +29,9 @@ do
 done
 
 #Compile
-cd ./SourceTemp/Deploy/Linux
-bash ./DeployLinux.sh
+dotnet publish ./SourceTemp/Barotrauma/BarotraumaClient/LinuxClient.csproj -c Release -clp:"ErrorsOnly;Summary" --self-contained -r linux-x64 \/p:Platform="x64"
+dotnet publish ./SourceTemp/Barotrauma/BarotraumaServer/LinuxServer.csproj -c Release -clp:"ErrorsOnly;Summary" --self-contained -r linux-x64 \/p:Platform="x64"
 
 #Copy finished code and cleanup
-cd ../../..
 cp -r ./SourceTemp/Barotrauma/bin/ReleaseLinux/netcoreapp3.1/linux-x64/* .
 rm -rf ./SourceTemp
