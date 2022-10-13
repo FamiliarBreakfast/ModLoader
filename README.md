@@ -1,27 +1,60 @@
-# ModLoader
-Source mod loader for barotrauma  
+# Harmony for Barotrauma
+Source mod loader/patcher for Barotrauma using Harmony.
 
-Very basic proof of concept for a source mod loader, by recompiling the game source on launch. Surprisingly fast, less than 20 seconds on a Ryzen 7 3700X, with subsequent launches being faster.  
-
-It is currently a bash script, compatible with Bash 3.0 and up. Requires dotnet SDK for compiling and git for fetching the source code. Place the script in the Barotrauma root folder.
-
-Mods are placed into /Mods or /LocalMods. The structure must match that of the source code, and should look like  
-/Mods/[modname]/BarotraumaClient|BarotraumaServer|BarotraumaShared/[...]  
+Adds a new ModContent type: Harmony  
+```xml
+<Harmony file="[Local]Mods/Example DLL Mod/Example.dll" />
 ```
- Mods
-└── [modname]
-    ├── BarotraumaClient
-    │   └── ClientSource
-    │       ├── client2.cs
-    │       └── client.cs
-    ├── BarotraumaServer
-    │   └── ServerSource
-    │       └── server.cs
-    └── BarotraumaShared
-        └── SharedSource
-            └── shared.cs
-```
-<sup>Something like this</sup>  
-My implementation is crude, and was thrown together quite quickly, but theoretically, this method could be extended to patch individual classes, too. As it stands, however, you can only add or modify source files.  
 
-Since mods can be stored in /Mods, they can theoretically be shared on Steam, and reap all the benefits thereof. This makes mod management much easier for everyone.  
+As the name suggests, this content type allows for Harmony patches to be applied (and any other form of code injection)
+
+**For Users:** Download the latest release and unzip it to your game directory. Mods go in the normal mod folders.  
+**For Mod Developers:** For the most part, you're just making standard Harmony patches. A few things to note:
+- Your assemblies entry point **must** be a static method named `Main()`, inside a class with the same name as your assembly.
+- Most of Barotrauma's classes are internal, so you'll have to use AccessTools to access them.
+- You should include any external referenced assemblies within your mod's folder.
+
+
+# Example Mod
+Included as a demo and reference. Changes the time a chat  message was recieved to a different string.
+
+To this:
+
+**Example.cs**
+```c#
+using System;  
+using System.Runtime;  
+using System.Reflection;  
+using HarmonyLib;  
+using Barotrauma;  
+
+public class Example
+{
+	public static void Main()
+	{
+		var harmony = new Harmony("com.example.patch");
+		harmony.PatchAll();
+	}
+}
+
+[HarmonyPatch]
+class Patch
+{
+	public static MethodBase TargetMethod()
+	{
+		var type = AccessTools.TypeByName("ChatMessage");
+		return AccessTools.Method(type, "GetTimeStamp");
+	}
+	static void Postfix(ref string __result)
+	{
+		__result = $"[MODDY] ";
+	}
+}
+```
+**filelist.xml**
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<contentpackage name="Example DLL Mod" path="LocalMods/Example DLL Mod/filelist.xml" corepackage="false" gameversion="0.19.11.0">
+  <Harmony file="LocalMods/Example DLL Mod/Example.dll" />
+</contentpackage>
+```
